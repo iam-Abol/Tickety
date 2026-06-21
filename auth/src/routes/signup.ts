@@ -5,7 +5,7 @@ import { DatabaseConnectionError } from "../errors/database-connection-error";
 import { User } from "../models/user";
 import { BadRequestError } from "../errors/bad-request-error";
 const router = express.Router();
-
+import jwt from "jsonwebtoken";
 router.post(
   "/api/users/signup",
   [
@@ -32,9 +32,17 @@ router.post(
 
     const user = User.build({ email, password });
     await user.save();
+    //jwt
+
+    const userJwt = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_KEY!
+    );
+
+    req.session = { jwt: userJwt };
 
     res.status(201).send(user);
   }
 );
-
+ 
 export { router as signupRouter };
