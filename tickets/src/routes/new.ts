@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post(
   "/api/tickets",
-  requireAuth,
+  // requireAuth,
   [
     body("title").not().isEmpty().withMessage("Title is required"),
     body("price")
@@ -20,6 +20,7 @@ router.post(
   async (req: Request, res: Response) => {
     const { title, price } = req.body;
 
+    console.log(req.currentUser);
     const ticket = Ticket.build({
       title,
       price,
