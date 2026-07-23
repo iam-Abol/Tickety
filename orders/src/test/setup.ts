@@ -1,9 +1,9 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { app } from "../app";
 import mongoose from "mongoose";
-import request from "supertest";
 import jwt from "jsonwebtoken";
 let mongo: any;
+
+jest.mock("../nats-wrapper");
 beforeAll(async () => {
   mongo = await MongoMemoryServer.create();
   const mongoUri = mongo.getUri();
@@ -28,7 +28,7 @@ afterAll(async () => {
 });
 
 declare global {
-  var signin: () => Promise<string[]>;
+  var signin: () => string[];
 }
 
 global.signin = () => {
