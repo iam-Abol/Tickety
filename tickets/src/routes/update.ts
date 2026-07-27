@@ -5,6 +5,7 @@ import {
   NoteFoundError,
   requireAuth,
   NotAuthorizedError,
+  BadRequestError,
 } from "@zayatickety/common";
 import { Ticket } from "../models/ticket";
 import { TicketUpdatedPublisher } from "../events/publishers/ticket-updated-publisher";
@@ -27,6 +28,9 @@ router.put(
 
     if (!ticket) {
       throw new NoteFoundError();
+    }
+    if (ticket.orderId) {
+      throw new BadRequestError("can not edit a reserved ticket");
     }
     if (ticket.userId !== req.currentUser!.id) {
       throw new NotAuthorizedError();
