@@ -59,6 +59,7 @@ router.post(
       userId: order.userId,
       expiresAt: order.expiresAt.toISOString(),
       ticket: { id: ticket._id.toString(), price: ticket.price },
+      version: order.version,
     });
     res.status(201).send(order);
   },
