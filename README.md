@@ -37,36 +37,44 @@ The project focuses on backend engineering concepts commonly used in production 
 
 # 🏗 Architecture
 
-```text
-                           React Client
-                                │
-                                ▼
-                        NGINX Ingress Controller
-                                │
-      ┌──────────┬──────────┬──────────┬──────────┬──────────┐
-      ▼          ▼          ▼          ▼          ▼
-   Auth      Tickets      Orders    Payments   Expiration
-      │          │            │          │           │
-      ▼          ▼            ▼          ▼           ▼
-   MongoDB    MongoDB      MongoDB    MongoDB      Redis
-                     │
-                     ▼
-              NATS Streaming
-                 Event Bus
+```mermaid
+flowchart TB
+
+    Client[React Client]
+
+    Client --> Ingress[NGINX Ingress Controller]
+
+    Ingress --> Auth[Auth Service]
+    Ingress --> Tickets[Tickets Service]
+    Ingress --> Orders[Orders Service]
+    Ingress --> Payments[Payments Service]
+    Ingress --> Expiration[Expiration Service]
+
+    Auth --> AuthDB[(MongoDB)]
+    Tickets --> TicketsDB[(MongoDB)]
+    Orders --> OrdersDB[(MongoDB)]
+    Payments --> PaymentsDB[(MongoDB)]
+    Expiration --> Redis[(Redis)]
+
+    Auth <--> NATS[NATS Streaming<br/>Event Bus]
+    Tickets <--> NATS
+    Orders <--> NATS
+    Payments <--> NATS
+    Expiration <--> NATS
 ```
 
 ---
 
 # 🧩 Microservices
 
-| Service | Description |
-|----------|-------------|
-| Auth | User authentication & authorization |
-| Tickets | Ticket CRUD operations |
-| Orders | Ticket reservation and order management |
-| Payments | Stripe payment processing |
-| Expiration | Automatically expires unpaid orders |
-| Client | React / Next.js frontend |
+| Service    | Description                             |
+| ---------- | --------------------------------------- |
+| Auth       | User authentication & authorization     |
+| Tickets    | Ticket CRUD operations                  |
+| Orders     | Ticket reservation and order management |
+| Payments   | Stripe payment processing               |
+| Expiration | Automatically expires unpaid orders     |
+| Client     | React / Next.js frontend                |
 
 Each service:
 
@@ -82,42 +90,45 @@ Each service:
 
 ### Ticket Purchase Workflow
 
-```text
-User
- │
- ▼
-Create Ticket
- │
- ▼
-TicketCreated Event
- │
- ▼
-Orders Service
- │
- ▼
-OrderCreated Event
- │
- ▼
-Expiration Service
- │
- ▼
-ExpirationComplete Event
- │
- ▼
-Orders Service
- │
- ▼
-OrderCancelled Event
+```mermaid
+sequenceDiagram
 
-OR
+    participant User
+    participant Tickets
+    participant Orders
+    participant Expiration
+    participant Payments
 
-Payment Service
- │
- ▼
-PaymentCreated Event
- │
- ▼
-OrderCompleted
+    User->>Tickets: Create Ticket
+
+    Tickets->>NATS: TicketCreated Event
+
+    NATS->>Orders: TicketCreated Event
+
+    User->>Orders: Purchase Ticket
+
+    Orders->>NATS: OrderCreated Event
+
+    NATS->>Expiration: OrderCreated Event
+
+    Expiration->>NATS: ExpirationComplete Event
+
+    NATS->>Orders: ExpirationComplete Event
+
+
+    alt Payment Successful
+
+        User->>Payments: Make Payment
+
+        Payments->>NATS: PaymentCreated Event
+
+        NATS->>Orders: OrderCompleted Event
+
+    else Payment Failed / Expired
+
+        NATS->>Orders: OrderCancelled Event
+
+    end
 ```
 
 ---
