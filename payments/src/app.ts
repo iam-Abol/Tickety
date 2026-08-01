@@ -2,6 +2,7 @@ import express from "express";
 import "express-async-errors";
 import { errorHandler, NoteFoundError, currentUser } from "@zayatickety/common";
 import cookieSession from "cookie-session";
+import { createChargeRouter } from "./routes/new";
 
 const app = express();
 app.set("trust proxy", true);
@@ -11,6 +12,8 @@ app.use(
 );
 
 app.use(currentUser);
+
+app.use(createChargeRouter);
 
 ////////////////
 
